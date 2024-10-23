@@ -1,101 +1,106 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const App = () => {
-  const [task, setTask] = useState(''); // Lưu nội dung hiện tại
-  const [time, setTime] = useState(''); 
-  const [taskList, setTaskList] = useState<{ key: string; taskName: string; taskTime: string }[]>([]); // Lưu danh sách công việc
-  const [isEditing, setIsEditing] = useState(false); // Kiểm tra trạng thái đang chỉnh sửa
-  const [currentTaskKey, setCurrentTaskKey] = useState<string | null>(null); // Lưu trữ công việc hiện tại để chỉnh sửa
+  const [task, setTask] = useState('');
+  const [time, setTime] = useState('');
+  const [taskList, setTaskList] = useState<{ key: string; taskName: string; taskTime: string }[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTaskKey, setCurrentTaskKey] = useState<string | null>(null);
 
   const addOrUpdateTask = () => {
-  if (task.trim().length === 0 || time.trim().length === 0) {
-    alert("Vui lòng nhập công việc và thời gian của bạn !!!");
-    return;
-  }
+    if (task.trim().length === 0 || time.trim().length === 0) {
+      alert("Vui lòng nhập công việc và thời gian của bạn !!!");
+      return;
+    }
     
-    // Thêm công việc hoặc cập nhật sau khi chỉnh sửa
-  if (isEditing && currentTaskKey) {
-    // Cập nhật công việc
-    setTaskList(
-      taskList.map(t =>
-        t.key === currentTaskKey ? { key: t.key, taskName: task, taskTime: time } : t
-      )
-    );
-    setIsEditing(false);
-    setCurrentTaskKey(null);
-  } else {
-    // Thêm công việc mới
-    setTaskList([...taskList, { key: Math.random().toString(), taskName: task, taskTime: time }]);
-  }
-  setTask(''); // Xóa ô nhập liệu sau khi thêm/cập nhật
-  setTime(''); // Xóa ô nhập thời gian
-};
+    if (isEditing && currentTaskKey) {
+      setTaskList(
+        taskList.map(t =>
+          t.key === currentTaskKey ? { key: t.key, taskName: task, taskTime: time } : t
+        )
+      );
+      setIsEditing(false);
+      setCurrentTaskKey(null);
+    } else {
+      setTaskList([...taskList, { key: Math.random().toString(), taskName: task, taskTime: time }]);
+    }
+    setTask('');
+    setTime('');
+  };
 
-  // Xóa công việc
   const deleteTask = (key: string) => {
     setTaskList(taskList.filter(task => task.key !== key));
   };
 
-  // Chỉnh sửa công việc
   const editTask = (key: string, taskName: string, taskTime: string) => {
-    setTask(taskName); // Hiển thị nội dung trong ô nhập liệu để chỉnh sửa
+    setTask(taskName);
     setTime(taskTime);
     setIsEditing(true);
-    setCurrentTaskKey(key); // Lưu key của công việc để cập nhật
+    setCurrentTaskKey(key);
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>My Day</Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.taskInput}
-          placeholder='Công việc của bạn'
-          value={task}
-          onChangeText={text => setTask(text)}
-        />
-        <TextInput
-          style={styles.timeInput}
-          placeholder='Thời gian'      
-          value={time}
-          onChangeText={text => setTime(text)}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={addOrUpdateTask}>
-          {isEditing ? (
-            <Icon name='save' size={20} color='white' /> 
-          ) : (
-            <Icon name='plus' size={20} color='white' /> 
-          )}
+  const renderItem = ({ item, drag, isActive }: any) => (
+    <ScaleDecorator>
+      <View style={styles.taskItem}>
+        <TouchableOpacity
+          onPressIn={drag}
+          disabled={isActive}
+          style={styles.textContainer}
+        >
+          <Text style={styles.taskText}>{item.taskName}</Text>
+          <Text style={styles.taskTime}>Thời gian: {item.taskTime} giờ</Text>
         </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => editTask(item.key, item.taskName, item.taskTime)} style={styles.editIcon}>
+            <Icon name='pencil' size={20} color='green' />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => deleteTask(item.key)}>
+            <Icon name='trash' size={20} color='red' />
+          </TouchableOpacity>
+        </View>
       </View>
+    </ScaleDecorator>
+  );
 
-      <View style={styles.listContainer}>
-        <FlatList
-          data={taskList}
-          renderItem={({ item, index }) => (
-            <View style={styles.taskItem}>
-              <View style={styles.textContainer}>
-                <View style={styles.taskRow}>
-                  <Text style={styles.taskIndex}>{index + 1}. </Text>
-                  <Text style={styles.taskText}>{item.taskName}</Text>
-                </View>
-                <Text style={styles.taskTime}>Thời gian: {item.taskTime} giờ</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => editTask(item.key, item.taskName, item.taskTime)} style={styles.editIcon}>
-                  <Icon name='pencil' size={20} color='green' />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteTask(item.key)}>
-                  <Icon name='trash' size={20} color='red' />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        />
-      </View>
-    </SafeAreaView>
+  return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>My Day</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.taskInput}
+            placeholder='Công việc của bạn'
+            value={task}
+            onChangeText={text => setTask(text)}
+          />
+          <TextInput
+            style={styles.timeInput}
+            placeholder='Thời gian'      
+            value={time}
+            onChangeText={text => setTime(text)}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={addOrUpdateTask}>
+            {isEditing ? (
+              <Icon name='save' size={20} color='white' /> 
+            ) : (
+              <Icon name='plus' size={20} color='white' /> 
+            )}
+          </TouchableOpacity>
+        </View>
+       <GestureHandlerRootView>
+        <View style={styles.listContainer}>
+          <DraggableFlatList
+            data={taskList}
+            onDragEnd={({ data }) => setTaskList(data)}
+            keyExtractor={(item) => item.key}
+            renderItem={renderItem}
+          /> 
+        </View>
+       </GestureHandlerRootView>
+      </SafeAreaView>
   );
 };
 
@@ -167,16 +172,8 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 10,
   },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   textContainer: {
     flex: 1, 
-  },
-  taskIndex: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   taskText: {
     fontSize: 16,

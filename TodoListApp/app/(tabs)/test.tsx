@@ -1,81 +1,85 @@
-import React, { useState } from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import React from 'react';
+import { SafeAreaView, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTheme } from '../../redux/themeMode/themeSlice';
+import { RootState } from '@/redux/themeMode/themeStore';
 
-const NUM_ITEMS = 10;
-function getColor(i: number) {
-  const multiplier = 255 / (NUM_ITEMS - 1);
-  const colorVal = i * multiplier;
-  return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
-}
+const TestScreen = () => {
+  const theme = useSelector((state: RootState) => state.theme.value);
+  const dispatch = useDispatch();
 
-type Item = {
-  key: string;
-  label: string;
-  height: number;
-  width: number;
-  backgroundColor: string;
-};
-
-const initialData: Item[] = [...Array(NUM_ITEMS)].map((d, index) => {
-  const backgroundColor = getColor(index);
-  return {
-    key: `item-${index}`,
-    label: String(index),
-    height: 100,
-    width: 60 + Math.random() * 40,
-    backgroundColor,
-  };
-});
-
-export default function App() {
-  const [data, setData] = useState(initialData);
-
-  const renderItem = ({ item, drag, isActive }: RenderItemParams<Item>) => {
-    return (
-      <ScaleDecorator>
-        <TouchableOpacity
-          onPressIn={drag}
-          disabled={isActive}
-          style={[
-            styles.rowItem,
-            { backgroundColor: isActive ? "red" : item.backgroundColor },
-          ]}
-        >
-          <Text style={styles.text}>{item.label}</Text>
-        </TouchableOpacity>
-      </ScaleDecorator>
-    );
+  const handleToggleTheme = () => {
+    dispatch(toggleTheme());
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-     <DraggableFlatList
-  data={data}
-  onDragEnd={({ data }) => setData(data)} // Cập nhật danh sách sau khi kéo thả
-  keyExtractor={(item) => item.key}
-  renderItem={renderItem}
-  activationDistance={1} // Điều chỉnh khoảng cách kích hoạt nếu cần
-/>
-    </GestureHandlerRootView>
+    <SafeAreaView
+      style={[
+        styles.container,
+        theme === 'light' ? styles.lightContainer : styles.darkContainer,
+      ]}
+    >
+      <Text style={[styles.text, theme === 'light' ? styles.lightText : styles.darkText]}>
+        Hello World!
+      </Text>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          theme === 'light' ? styles.lightButton : styles.darkButton,
+        ]}
+        onPress={handleToggleTheme}
+      >
+        <Text style={theme === 'light' ? styles.buttonDarkText : styles.buttonLightText}>
+          {theme === 'light' ? 'Hồng Mode' : 'Tím Mode'}
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  rowItem: {
-    height: 100,
-    width: 100,
-    alignItems: "center",
-    justifyContent: "center",
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lightContainer: {
+    backgroundColor: 'pink',
+  },
+  darkContainer: {
+    backgroundColor: 'purple',
   },
   text: {
-    color: "white",
     fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
+  },
+  lightText: {
+    color: 'purple',
+  },
+  darkText: {
+    color: 'pink',
+  },
+  button: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  lightButton: {
+    backgroundColor: 'purple',
+  },
+  darkButton: {
+    backgroundColor: 'pink',
+  },
+  buttonLightText: {
+    color: 'purple',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonDarkText: {
+    color: 'pink',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
+
+export default TestScreen;
